@@ -1,0 +1,140 @@
+{
+  "configs": [
+    {
+      "server": "hk02-21.ssv7.net",
+      "server_port": 29177,
+      "password": "mmeVx5ehVRAb",
+      "method": "aes-256-cfb",
+      "remarks": "香港",
+      "auth": false,
+      "timeout": 5
+    },
+    {
+      "server": "sg05-21.ssv7.net",
+      "server_port": 29177,
+      "password": "mmeVx5ehVRAb",
+      "method": "aes-256-cfb",
+      "remarks": "新加坡",
+      "auth": false,
+      "timeout": 5
+    },
+    {
+      "server": "us03-21.ssv7.net",
+      "server_port": 29177,
+      "password": "mmeVx5ehVRAb",
+      "method": "aes-256-cfb",
+      "remarks": "美国",
+      "auth": false,
+      "timeout": 5
+    },
+    {
+      "server": "jp01-21.ssv7.net",
+      "server_port": 29177,
+      "password": "mmeVx5ehVRAb",
+      "method": "aes-256-cfb",
+      "remarks": "日本",
+      "auth": false,
+      "timeout": 5
+    },
+    {
+      "server": "us02-21.ssv7.net",
+      "server_port": 8388,
+      "password": "mmeVx5ehVRAb",
+      "method": "aes-256-cfb",
+      "remarks": "美国02",
+      "auth": false,
+      "timeout": 5
+    },
+    {
+      "server": "jp01-21.ssv7.net",
+      "server_port": 29177,
+      "password": "mmeVx5ehVRAb",
+      "method": "aes-256-cfb",
+      "remarks": "",
+      "auth": false,
+      "timeout": 5
+    },
+    {
+      "server": "jp06-21.ssv7.net",
+      "server_port": 29177,
+      "password": "mmeVx5ehVRAb",
+      "method": "aes-256-cfb",
+      "remarks": "",
+      "auth": false,
+      "timeout": 5
+    },
+    {
+      "server": "sg02-21.ssv7.net",
+      "server_port": 29177,
+      "password": "mmeVx5ehVRAb",
+      "method": "aes-256-cfb",
+      "remarks": "",
+      "auth": false,
+      "timeout": 5
+    },
+    {
+      "server": "sg05-21.ssv7.net",
+      "server_port": 29177,
+      "password": "mmeVx5ehVRAb",
+      "method": "aes-256-cfb",
+      "remarks": "",
+      "auth": false,
+      "timeout": 5
+    },
+    {
+      "server": "us03-21.ssv7.net",
+      "server_port": 29177,
+      "password": "mmeVx5ehVRAb",
+      "method": "aes-256-cfb",
+      "remarks": "",
+      "auth": false,
+      "timeout": 5
+    },
+    {
+      "server": "sg05-21.ssv7.net",
+      "server_port": 29177,
+      "password": "mmeVx5ehVRAb",
+      "method": "aes-256-cfb",
+      "remarks": "",
+      "auth": false,
+      "timeout": 5
+    }
+  ],
+  "strategy": null,
+  "index": 0,
+  "global": false,
+  "enabled": true,
+  "shareOverLan": false,
+  "isDefault": false,
+  "localPort": 1080,
+  "pacUrl": null,
+  "useOnlinePac": false,
+  "secureLocalPac": true,
+  "availabilityStatistics": false,
+  "autoCheckUpdate": true,
+  "checkPreRelease": false,
+  "isVerboseLogging": false,
+  "logViewer": {
+    "topMost": false,
+    "wrapText": false,
+    "toolbarShown": false,
+    "Font": "Consolas, 8pt",
+    "BackgroundColor": "Black",
+    "TextColor": "White"
+  },
+  "proxy": {
+    "useProxy": false,
+    "proxyType": 0,
+    "proxyServer": "",
+    "proxyPort": 0,
+    "proxyTimeout": 3
+  },
+  "hotkey": {
+    "SwitchSystemProxy": "",
+    "SwitchSystemProxyMode": "",
+    "SwitchAllowLan": "",
+    "ShowLogs": "",
+    "ServerMoveUp": "",
+    "ServerMoveDown": ""
+  }
+}
