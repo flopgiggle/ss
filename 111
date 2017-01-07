@@ -1,436 +1,458 @@
 import React, { PropTypes } from 'react';
 import { connect } from 'react-redux';
-import { getBusinessInfo } from '../../actions/business'
-import { Row, Col, Icon } from 'antd';
-import './style.css';
 import CommonUtil from '../../../../assets/js/common.js';
-
-class Business extends React.Component {
+import { Row, Col, Modal, Input, Button, Select, Cascader, Table, AutoComplete, Radio, DatePicker, InputNumber, Checkbox } from 'antd';
+import HistorySearchInput from '../search';
+import './style.css';
+const RadioGroup = Radio.Group;
+const RadioButton = Radio.Button;
+class BusinessInfo extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      groupStatusInfo: new Map()
-    };
-    this.tableData;
-    //显示阶梯列的索引
-    //只有索引有值时才显示,没有处于索引中的阶梯自动隐藏
-    this.showStairsAreaIndex = [];
+    		this.state = {
+			value: 1,
+			indeterminate: true,
+			checkAll: false,
+			tableData:{},
+			isSelectAll:false,
+		};
+
   }
+  
+	getTableData() {
+		const dataObj = [
+			{
+				SPQName:'301总医院项目',
+				SPQID:'123',
+				FrameNumber:'567',
+				ProjectDate:'2015/12/12~2016/11/11',
+				TotalAmount:1234.32,
+				PassCondition:'XXXXX',
+				ProductCategory:'数统企业网',
+				ProductSeries:'AR SMB1',
+				ProductSeriesAmount:'323.32',
+				Discount:32
+			},
+			{
+				SPQName:'301总医院项目',
+				SPQID:'123',
+				FrameNumber:'567',
+				ProjectDate:'2015/12/12~2016/11/11',
+				TotalAmount:1234.32,
+				PassCondition:'XXXXX',
+				ProductCategory:'数统企业网',
+				ProductSeries:'AR SMB2',
+				ProductSeriesAmount:'323.32',
+				Discount:32
+			},
+			{
+				SPQName:'301总医院项目',
+				SPQID:'123',
+				FrameNumber:'567',
+				ProjectDate:'2015/12/12~2016/11/11',
+				TotalAmount:1234.32,
+				PassCondition:'XXXXX',
+				ProductCategory:'服务器',
+				ProductSeries:'AR SMB3',
+				ProductSeriesAmount:'323.32',
+				Discount:32
+			}
+			 ,
+			 {
+			 	SPQName:'21世纪经济',
+			 	SPQID:'123q',
+			 	FrameNumber:'567',
+			 	ProjectDate:'2015/12/12~2016/11/11',
+			 	TotalAmount:1234.32,
+			 	PassCondition:'XXXXX',
+			 	ProductCategory:'服务器',
+			 	ProductSeries:'AR SMB1',
+			 	ProductSeriesAmount:'323.32',
+			 	Discount:32
+			 }
+			 ,
+			 {
+			 	SPQName:'21世纪经济',
+			 	SPQID:'123q',
+			 	FrameNumber:'567',
+			 	ProjectDate:'2015/12/12~2016/11/11',
+			 	TotalAmount:1234.32,
+			 	PassCondition:'XXXXX',
+			 	ProductCategory:'路由器',
+			 	ProductSeries:'AR SMB2',
+			 	ProductSeriesAmount:'323.32',
+			 	Discount:32
+			 },
+			 {
+			 	SPQName:'21世纪经济',
+			 	SPQID:'123q',
+			 	FrameNumber:'567',
+			 	ProjectDate:'2015/12/12~2016/11/11',
+			 	TotalAmount:1234.32,
+			 	PassCondition:'XXXXX',
+			 	ProductCategory:'路由器',
+			 	ProductSeries:'AR SMB3',
+			 	ProductSeriesAmount:'323.32',
+			 	Discount:32
+			 },
+			 {
+			 	SPQName:'21世纪经济',
+			 	SPQID:'123q',
+			 	FrameNumber:'567',
+			 	ProjectDate:'2015/12/12~2016/11/11',
+			 	TotalAmount:1234.32,
+			 	PassCondition:'XXXXX',
+			 	ProductCategory:'路由器',
+			 	ProductSeries:'AR SMB3',
+			 	ProductSeriesAmount:'323.32',
+			 	Discount:32
+			 }
+		]
 
-  //保留两位小数
-  getRound(num, len) {
-    return Math.round(num * Math.pow(10, len)) / Math.pow(10, len);
-  }
+		return dataObj;
+	}
 
-  getShowOrHideIconType(isShowDetail) {
-    return isShowDetail ? 'minus-circle' : 'plus-circle';
-  }
-
-  //处理显示或隐藏分组明细事件
-  showOrHideGroupDetails(groupData, e) {
-    //点击了加号
-    if (e.target.className.indexOf('plus-circle') > 0) {
-      this.state.groupStatusInfo.set(groupData, { isShowDetail: true })
-    } else {
-      this.state.groupStatusInfo.set(groupData, { isShowDetail: false })
-    }
-    this.setState({ groupStatusInfo: this.state.groupStatusInfo });
-  }
-
-  //生成表格的阶梯部分区域
-  generateTableHeaderStageInfoArea(titleNames) {
-    const tds = [];
-    titleNames.forEach((item, i) => {
-      tds.push(
-        <th width='8%' className={'stairsColumn' + i}></th>
-      );
-      tds.push(
-        <th
-          width='8%'
-          className={'stageCell stairsColumn' + i}
-          style={{
-            minWidth: '90px'
-          }}>{titleNames[i]}</th>
-      );
-    });
-    return tds;
-  }
-
-  // 生成表格合计行区域 根据阶梯列数动态生成 每个阶梯生成两列,分别为阶梯数值区域和阶梯区间区域 value会根据一定算法,自动选择落到某个阶梯区间
-  // stairsCount table的阶梯列数 stairsData 每个阶梯对应的数据,为数组 count 实际展示的业务数据
-  generateCountRowInfoArea(stairsValue, stairsDatas, count) {
-    const tds = [];
-
-    //数据展示到哪个区间
-    let showInWhichStairs;
-
-    //左侧区间值
-    let leftStairsValue;
-
-    //右侧区间值
-    let rightStairsValue;
-
-    //计算实际业务数据应该展示到哪一个区间
-    for (let i = 0; i < stairsDatas.length; i++) {
-      //每次循环，重置显示区域,-1为未匹配到显示区域
-      showInWhichStairs = -1;
-
-      //数据如果大于最大区间值,则显示到第一个区间
-      if (i == 0 && stairsValue >= stairsDatas[i]) {
-        showInWhichStairs = i;
-        rightStairsValue = stairsDatas[i];
-        break;
-      }
-
-      //数据匹配到中间区间
-      if ((i > 0 && i < (stairsDatas.length - 1)) && (stairsValue >= stairsDatas[i] && stairsValue < stairsDatas[i - 1])) {
-        showInWhichStairs = i;
-        leftStairsValue = stairsDatas[i];
-        rightStairsValue = stairsDatas[i + 1];
-        break;
-      }
-
-      //数据小于最小区间值，则显示到最后一个区间
-      if (i == (stairsDatas.length - 1) && stairsValue >= stairsDatas[i]) {
-        showInWhichStairs = i;
-        leftStairsValue = stairsDatas[i];
-        rightStairsValue = stairsDatas[i - 1];
-        break;
-      }
-    }
-
-    //阶梯列不为1时表示该阶梯要展示
-    if (showInWhichStairs != -1) {
-      this.showStairsAreaIndex.push(showInWhichStairs);
-    }
-
-    //阶梯图内容
-    for (let i = 0; i < stairsDatas.length; i++) {
-      let stairsInfoContent;
-      if (i == showInWhichStairs) {
-        stairsInfoContent = this.generateStairsContent(stairsValue, leftStairsValue, rightStairsValue);
-      }
-
-      const widthPercent = 80 / stairsDatas.length;
-      const infoContentPerent = widthPercent * 0.8 + '%';
-      const stairsDatasPerent = widthPercent * 0.2 + '%';
-
-      tds.push(
-        <td width={infoContentPerent} className={'stairsColumn' + i}>
-          <div className={'tdstairs'}>{stairsInfoContent}</div>
-        </td>
-      );
-      tds.push(
-        <td className={'stageCell stairsColumn' + i} width={stairsDatasPerent}>{stairsDatas[i]}</td>
-      );
-    }
-    return tds;
-  }
-
-  // 生成阶梯的具体信息 currentValue 当前行的值 leftStairsValue 左侧区间值上限 rightStairsValue 右侧区间值上限
-  generateStairsContent(currentValue, leftStairsValue, rightStairsValue) {
-    let bottomLeftInfo;
-    let bottomRightInfo;
-
-    if (leftStairsValue) {
-      const value = this.getRound((currentValue - leftStairsValue), 2);
-      const persent = this.getRound((value / currentValue) * 100, 2);
-      bottomLeftInfo = '$' + value + '(' + persent + '%)';
-    }
-
-    if (rightStairsValue) {
-      const value = this.getRound((currentValue - rightStairsValue), 2);
-      const persent = this.getRound((value / currentValue) * 100, 2);
-      bottomRightInfo = '$' + value + '(' + persent + '%)';
-    }
-
-    return <div className='stairsContent'>
-      <div className='tdTop'>
-        <span>{currentValue}</span>
-      </div>
-      <div className='tdBottom'>
-        <div className='tdBottomLeft'>
-          <span>{bottomLeftInfo}</span>
-        </div>
-        <div className='tdBottomRight'>
-          <span>{bottomRightInfo}</span>
-        </div>
-      </div>
-    </div>;
-  }
-
-  //生成分组名称信息区域(分组的起始单元格)
-  generateGroupNameInfoArea(isShowAddIcon, groupDetaisData) {
-    return <div className='tdtitle'>
-      <span className='titleText'>{groupDetaisData.name}</span>
-      <span className='link'>${groupDetaisData.value}</span>
-      <span className='link'>({groupDetaisData.percent})</span>
-      <Icon
-        onClick={this.showOrHideGroupDetails.bind(this, groupDetaisData)}
-        className='showOrHideButton'
-        type={this.getShowOrHideIconType(isShowAddIcon)} />
-      <br />
-      <span>
-        <span className='titleText'>审批级别:</span>{groupDetaisData.approveLeave}</span>
-    </div>
-  }
-
-  //仅仅显示分组信息区域，此时分组行列都处于折叠状态
-  onlyShowGroupArea(groupDetaisData) {
-    return <tr>
-      <td colSpan={2}>
-        {this.generateGroupNameInfoArea(false, groupDetaisData)}
-      </td>
-      {this.generateCountRowInfoArea(groupDetaisData.value, groupDetaisData.stairsDatas, 32)}
-    </tr>
-  }
-
-  //显示分组和明细信息，行列全为展开状态
-  showDetailArea(groupDetaisData) {
-    const rows = [];
-    for (let i = 0; i < groupDetaisData.items.length; i++) {
-      let productNameTd;
-
-      //只在第一行行首增加产品名称，并且需要合并首列以突出分组
-      if (i == 0) {
-        productNameTd = <td rowSpan={groupDetaisData.items.length}>
-          {this.generateGroupNameInfoArea(true, groupDetaisData)}
-        </td>
-      }
-      rows.push(
-        <tr>
-          {productNameTd}
-          <td>
-            <div style={{ minWidth: '60px' }}>{groupDetaisData.items[i].name}</div>
-          </td>
-          {this.generateCountRowInfoArea(groupDetaisData.items[i].value, groupDetaisData.items[i].stairsDatas, 32)}
-        </tr>
-      );
-    };
-    return rows;
-  }
-
-  //生成分组明细区域，初次加载只显示产品大类 例如:产品下的明细
-  generateGroupDetailsArea(groupDetaisData) {
-    let rows = [];
-
-    //产品合并列数,在不显示明细时需要合并列
-    const isShowDetail = false;
-
-    //检查状态,是否需要显示产品明细
-    let groupStatusInfo = this.state.groupStatusInfo.get(groupDetaisData);
-    if (groupStatusInfo && groupStatusInfo.isShowDetail) {
-      rows = rows.concat(this.showDetailArea(groupDetaisData));
-    } else {
-      rows.push(this.onlyShowGroupArea(groupDetaisData));
-    }
-    return rows;
-  }
-
-  //生成分组数据区域 例如:产品、服务的每一个大类
-  generateGroupInfoArea(groupsData) {
-    let rows = [];
-    groupsData.forEach(oneGroup => {
-      rows = rows.concat(this.generateGroupDetailsArea(oneGroup));
-    });
-    return rows;
-  }
+	getGroupDataFromRows(groupFlag, rows) {
+		const groupMap = new Map();
+		for (const item of rows) {
+			if (groupMap.has(item[groupFlag])) {
+				const groupsData = groupMap.get(item[groupFlag]);
+				groupsData.push(item);
+			} else {
+				const groupsData = [];
+				groupsData.push(item);
+				groupMap.set(item[groupFlag], groupsData);
+			}
+		}
+		return groupMap;
+	}
 
 
+	getProductRowsInfoFromData(productCategoryGroupMap) {
+		const rows = [];
+		for (const [key, value] of productCategoryGroupMap) {
+			const oneRow = {
+				ProductCategory: key,
+				ProductSeries: value
+			}
+			rows.push(oneRow);
+		}
+		return rows;
+	}
 
-  getStandardData(businessData) {
+	getStandardData() {
+		const tableData = this.getTableData();
+		const projectGroupData = this.getGroupDataFromRows('SPQID', tableData);
+		const standardData = [];
+		for (const [key, value] of projectGroupData) {
+			const oneProject = {
+				SPQID: key,
+				ProductCategory: []
+			}
+			const productCategoryGroupMap = this.getGroupDataFromRows('ProductCategory', value);
+			oneProject.ProductCategory = this.getProductRowsInfoFromData(productCategoryGroupMap);
+			standardData.push(oneProject);
+		}
+		return standardData;
+	}
 
-    const tableData = {
-      titleNames: [],
-      taotal: totalData,
-      groups: []
-    }
-    const groupMap = new Map();
+	onCheckProjectChange(SPQID) {
+		debugger;
+		let isAllSelected = true;
+		this.state.tableData.map(item=>{
+			if(item.SPQID === SPQID){
+				item.selected = true;
+			}
+			if(item.selected === false){
+				isAllSelected = false;
+			}
+		});
 
-    let isNONNASmallSingleAmount = 0;
-    let officeBaseLine2Amount = 0;
-    let officeBaseLineAmount = 0;
-    let regionBaseLineAmount = 0;
-    let channelBaseLineAmount = 0;
-    let sPQBaseLineAmount = 0;
-    let totalAmount = 0;
-    //按产品大类,对业务数据进行分组,并汇总合计行的各底线数据
-    for (const item of businessData) {
-      //不汇总合计行
-      if(item.DataFlag==="合计"){
-        continue;
-      }
-      
-      if (groupMap.has(item.DataFlag)) {
-        const groupsData = groupMap.get(item.DataFlag);
-        groupsData.push(item);
-      } else {
-        const groupsData = [];
-        groupsData.push(item);
-        groupMap.set(item.DataFlag, groupsData);
-      }
-      isNONNASmallSingleAmount += parseFloat(item.IsNONNASmallSingle);
-      officeBaseLine2Amount += parseFloat(item.OfficeBaseLine2);
-      officeBaseLineAmount += parseFloat(item.OfficeBaseLine);
-      regionBaseLineAmount += parseFloat(item.RegionBaseLine);
-      channelBaseLineAmount += parseFloat(item.ChannelBaseLine);
-      sPQBaseLineAmount += parseFloat(item.SPQBaseLine);
-      totalAmount += parseFloat(item.TotalAmount);
-    }
+		this.setState({
+			isSelectAll:isAllSelected 
+		});
+	}
 
-    const totalData = {
-      name: '总计',
-      value: totalAmount,
-      percent: 100,
-      stairsDatas: [isNONNASmallSingleAmount, officeBaseLine2Amount, officeBaseLineAmount, regionBaseLineAmount, channelBaseLineAmount, sPQBaseLineAmount]
-    }
+	generateTableRows() {
+		debugger;
+		const standardData = this.getStandardData();
+		this.state.tableData = standardData;
+		const rows = [];
+		const _this = this;
+		standardData.map(function (projectItem) {
+			let projectIndex = 0;
+			let projectRowSpan = 0;
+			let isCreateProjectTd;
+			if (projectIndex === 0) {
+				projectItem.ProductCategory.map((items) => {
+					projectRowSpan += items.ProductSeries.length;
+					isCreateProjectTd = true;
+				});
+				
+			} else {
+				projectRowSpan = 0;
+				isCreateProjectTd = false;
+			}
+			
+			projectItem.ProductCategory.map((categoryItems) => {
+				let categoryIndex = 0;
+				let categoryRowSpan = categoryItems.ProductSeries.length;
+				let isCreateCategoryTd;
+				if (categoryIndex === 0) {
+					categoryRowSpan = categoryItems.ProductSeries.length;
+					isCreateCategoryTd = true;
+				} else {
+					categoryRowSpan = 0;
+					isCreateCategoryTd = false;
+				}
+				
+				categoryItems.ProductSeries.map((seriesItems) => {
+					const tr = <tr>
+						{isCreateProjectTd ? <td rowSpan={projectRowSpan}>
+						<Checkbox onChange={_this.onCheckProjectChange.bind(_this,seriesItems.SPQID)}></Checkbox></td> : ''}
+						{isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.SPQName}</td> : ''}
+						{isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.SPQID}</td> : ''}
+						{isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.ProjectDate}</td> : ''}
+						{isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.TotalAmount}</td> : ''}
+						{isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.PassCondition}</td> : ''}
+						{isCreateCategoryTd ? <td rowSpan={categoryRowSpan}>{seriesItems.ProductCategory}</td> : ''}
+						{isCreateCategoryTd ? <td rowSpan={categoryRowSpan}>{123.33}</td> : ''}
+						<td >{seriesItems.ProductSeries}</td>
+						<td >{seriesItems.ProductSeriesAmount}</td>
+						<td >{seriesItems.Discount}</td>
+					</tr>;
 
-    //根据分组数据,生成每个分组的明细数据
-    for (const [key, value] of groupMap) {
-      const groupItem = {
-        name: key,
-        value: 0,
-        percent: 0,
-        approveLeave: '',
-        items: [],
-        stairsDatas: [400]
-      }
+					rows.push(tr);
+					isCreateProjectTd = false;
+					isCreateCategoryTd = false;
+					projectIndex++;
+					categoryIndex++;
+				});
+			})
+		})
+		return rows;
+	}
 
-      for (const datarow of value) {
-        if (datarow.ProductCategory == '小计') {
-          groupItem.value = datarow.TotalAmount;
-          groupItem.percent = datarow.AmountPCT;
-          groupItem.approveLeave = datarow.ProjectApprovalLevel;
-          groupItem.stairsDatas = this.getStairsDataFromDataRow(datarow);
-        }
-        const detailData = {
-          name: datarow.ProductCategory,
-          value: datarow.TotalAmount,
-          percent: datarow.AmountPCT,
-          stairsDatas: this.getStairsDataFromDataRow(datarow)
-        }
-        groupItem.items.push(detailData);
-      }
+	onCheckAllChange(e) {
+		this.state.tableData.map(item=>{
+			item.selected = !this.state.isSelectAll;
+		});
+		this.setState({
+			isSelectAll:!this.state.isSelectAll 	
+		});
+	}
 
-      tableData.taotal = totalData;
-      tableData.groups.push(groupItem);
-      
-    }
-    for (const item of this.getTitleNamesData()) {
-        tableData.titleNames.push(item.name);
-    }
-    return tableData;
-  }
+	onCategoryChange(e) {
+		console.log('radio checked', e.target.value);
+		this.setState({
+			value: e.target.value,
+		});
+	}
 
-  getTitleNamesData() {
-    return [
-      { key: 'IsNONNASmallSingle', name: '万以下授权底线' },
-      { key: 'OfficeBaseLine2', name: '代表处/业务部二级底线(去除服务器)' },
-      { key: 'OfficeBaseLine', name: '代表处/业务部级底线' },
-      { key: 'RegionBaseLine', name: '地区部级底线' },
-      { key: 'ChannelBaseLine', name: '渠道授权底线' },
-      { key: 'SPQBaseLine', name: '特价门槛底线' }
-    ];
-  }
-
-  getStairsDataFromDataRow(dataRow) {
-    const data = [];
-    for (const item of this.getTitleNamesData()) {
-      data.push(dataRow[item.key]);
-    }
-    return data;
-  }
-
-  hideBlankStairs() {
-    const set = new Set();
-    this.showStairsAreaIndex.map(x => set.add(x))
-    const stairsLength = this.tableData.titleNames.length;
-    for (let i = 0; i < stairsLength; i++) {
-      if (!set.has(i)) {
-        var elements = document.getElementsByClassName('stairsColumn' + i);
-        for (const item of elements) {
-           item.style.display = 'none';
-           item.style.backgroundColor = 'red'
-         }
-      }
-    }
-  }
-
-  //组件完成加载业务数据
-  componentDidMount() {
-    this.props.dispatch(getBusinessInfo());
-    this.hideBlankStairs();
-  }
-
-  componentWillReceiveProps(nextProps) {
-    //if (this.props.BusinessId !== nextProps.BusinessId) {
-    //  this.props.dispatch(getBusinessInfo());
-    //  this.hideBlankStairs();
-    //}
-
-    this.hideBlankStairs();
-  }
-
-  componentDidUpdate() {
-    this.hideBlankStairs();
-  }
-
-  // shouldComponentUpdate(nextProps, nextSate) {
-  //   //return this.props.BusinessId === nextProps.BusinessId;
-  // }
+  onSeriesChange(e) {
+		console.log(`radio checked:${e.target.value}`);
+	}
 
   render() {
-    //let {businessData} = this.props;
-    let businessData = {"isSuccess":true,"message":null,"datas":[{"ProjectApprovalLevel":"","DataFlag":"合计","ProductCategory":"","AmountPCT":0.0,"ChannelBaseLine":"5000","SPQBaseLine":"5000","IsNONNASmallSingle":"5000","OfficeBaseLine2":"5000","OfficeBaseLine":"5000","RegionBaseLine":"5000","TotalAmount":"5000","ServiceAmount":"5000","UserPermission":"111111"},{"ProjectApprovalLevel":"业务部级","DataFlag":"产品","ProductCategory":"服务器","AmountPCT":0.3,"ChannelBaseLine":"1000","SPQBaseLine":"1000","IsNONNASmallSingle":"1000","OfficeBaseLine2":"1000","OfficeBaseLine":"1000","RegionBaseLine":"1000","TotalAmount":"1000","ServiceAmount":"1000","UserPermission":"111111"},{"ProjectApprovalLevel":"业务部级","DataFlag":"产品","ProductCategory":"数通","AmountPCT":0.3,"ChannelBaseLine":"2000","SPQBaseLine":"2000","IsNONNASmallSingle":"2000","OfficeBaseLine2":"2000","OfficeBaseLine":"2000","RegionBaseLine":"2000","TotalAmount":"2000","ServiceAmount":"2000","UserPermission":"111111"},{"ProjectApprovalLevel":"业务部级","DataFlag":"产品","ProductCategory":"小计","AmountPCT":0.6,"ChannelBaseLine":"3000","SPQBaseLine":"3000","IsNONNASmallSingle":"3000","OfficeBaseLine2":"3000","OfficeBaseLine":"3000","RegionBaseLine":"3000","TotalAmount":"3000","ServiceAmount":"3000","UserPermission":"111111"},{"ProjectApprovalLevel":"代表处级","DataFlag":"服务","ProductCategory":"服务器","AmountPCT":0.3,"ChannelBaseLine":"1000","SPQBaseLine":"1000","IsNONNASmallSingle":"1000","OfficeBaseLine2":"1000","OfficeBaseLine":"1000","RegionBaseLine":"1000","TotalAmount":"1000","ServiceAmount":"1000","UserPermission":"111111"},{"ProjectApprovalLevel":"代表处级","DataFlag":"服务","ProductCategory":"数通","AmountPCT":0.4,"ChannelBaseLine":"1000","SPQBaseLine":"1000","IsNONNASmallSingle":"1000","OfficeBaseLine2":"1000","OfficeBaseLine":"1000","RegionBaseLine":"1000","TotalAmount":"1000","ServiceAmount":"1000","UserPermission":"111111"},{"ProjectApprovalLevel":"代表处级","DataFlag":"服务","ProductCategory":"小计","AmountPCT":0.4,"ChannelBaseLine":"2000","SPQBaseLine":"2000","IsNONNASmallSingle":"2000","OfficeBaseLine2":"2000","OfficeBaseLine":"2000","RegionBaseLine":"2000","TotalAmount":"2000","ServiceAmount":"2000","UserPermission":"111111"}],"data":null};
-
-    let allDetailsCount = 1;
-    debugger;
-    if(businessData){
-      let standardData;
-      if(!this.tableData){
-        standardData = this.getStandardData(businessData.datas);
-        this.tableData = standardData;
-      }
-      
-      this.tableData.groups.forEach(function (oneGruop) {
-        allDetailsCount += oneGruop.items.length
-      }, this);  
-    }else{
-      return <div></div>
-    }
-    debugger;
     return (
-      <div className='businessContainer'>
-        <table className='commercialTable'>
-          <thead>
-            <tr>
-              <th colSpan='3' width='10%' style={{ maxWidth: '300px' }}></th>
-              {this.generateTableHeaderStageInfoArea(this.tableData.titleNames)}
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td rowSpan={allDetailsCount} style={{ minWidth: '35px' }}>
-                <div className='titleText center'>
-                  <span style={{ display: 'flex' }}>项目</span>
-                </div>
-              </td>
-              <td colSpan='2' className='titleText'>总计</td>
-              {this.generateCountRowInfoArea(this.tableData.taotal.value, this.tableData.taotal.stairsDatas, 33)}
-            </tr>
-            {this.generateGroupInfoArea(this.tableData.groups)}
-          </tbody>
-        </table>
-      </div>
+      			<div className='business-info-container'>
+				<div className='table-content'>
+					<table>
+						<thead>
+							<th><Checkbox  onChange={this.onCheckAllChange.bind(this)} checked={this.state.isSelectAll} ></Checkbox></th>
+							<th>特价/项目名称</th>
+							<th>特价编号</th>
+							<th>项目时间</th>
+							<th>总金额</th>
+							<th>特价条件通过</th>
+							<th>产品大类</th>
+							<th>产品大类金额</th>
+							<th>产品系列</th>
+							<th>产品系列金额</th>
+							<th>产品折扣</th>
+						</thead>
+						{this.generateTableRows()}
+					</table>
+				</div>
+				<div>
+
+					<div className='changeCata'>
+						<RadioGroup onChange={this.onCategoryChange.bind(this)} value={this.state.value}>
+							<Radio value={1}>数通企业网</Radio>
+							<Radio value={2}>服务器</Radio>
+						</RadioGroup>
+					</div>
+
+					<div>
+						<RadioGroup onChange={this.onSeriesChange.bind(this)} defaultValue="a">
+							<RadioButton value="a">ARSMS</RadioButton>
+							<RadioButton value="b">S1700</RadioButton>
+							<RadioButton value="c">BKK848</RadioButton>
+							<RadioButton value="d">CKN123</RadioButton>
+						</RadioGroup>
+					</div>
+
+				</div>
+			</div>
     );
   }
 }
 
 const mapStateToProps = (state) => {
-  return {
-    businessData: state.businessReducer.data//,
-    //BusinessId: state.commonReducer.ProjectData.BusinessId
-  }
+  return { };
+};
+
+const mapDispatchToProps = (dispatch, ownProps) => {
+	return {}
+};
+
+export default connect(mapStateToProps,mapDispatchToProps)(BusinessInfo);
+
+.business-info-container td {
+    text-align: center;
+    font-size: 12px;
+    color: #999;
+    height: 25px;
+    border: 1px solid #DCE5EA;
 }
 
-export default connect(mapStateToProps)(Business)
+
+.business-info-container th{
+    height: 25px;
+    text-align: center;
+    font-size: 12px;
+    color: white;
+    font-size: 14px;
+    border: 1px solid #DCE5EA;
+    background-color: #2db7f5;
+}
+
+.business-info-container table{
+    width: 100%;
+    border-collapse: collapse;
+}
+
+
+.business-info-container .stairsContent{
+    display: -webkit-flex; /* Safari */
+    display: flex;
+    flex-direction: column ;
+    height: 50px;
+    min-width: 200px;
+}
+
+.business-info-container .tdTop{
+    background-color: #A3E0FF;
+    color: #ff0000;
+    font-size: 16px;
+    font-weight: 500;    
+    flex:1;
+    height: 25px;
+    display: flex;
+    align-items:center;
+    justify-content: center;
+}
+
+.business-info-container .tdBottom{
+    display: flex;
+    flex-direction: row ;
+    height: 25px;
+}
+
+.business-info-container .tdBottomLeft{
+    background-color: #C8EBFF;
+    color: #f7931e;
+    font-size: 12px;
+    font-weight: 500;    
+    flex:1;
+    text-overflow: ellipsis;
+    overflow:hidden;
+    display: flex;
+    align-items:center;
+    justify-content: center;
+}
+
+.business-info-container .tdBottomRight{
+    background-color:#E1F5FE;
+    color:#203c4b;
+    font-size: 12px;
+    font-weight: 500;    
+    flex:1;
+    text-overflow: ellipsis;
+    overflow:hidden;
+    display: flex;
+    align-items:center;
+    justify-content: center;
+}
+
+.business-info-container .center{
+    display: flex;
+    align-items:center;
+    justify-content: center;    
+}
+
+.business-info-container .commercialTable{
+    min-width: 1300px;
+}
+
+.business-info-container {
+    overflow-x: auto;
+}
+
+.business-info-container .titleText{
+    font-size: 14px;
+    color: #666;
+    margin: 5px;
+}
+
+.business-info-container .stageCell{
+    background-color:#fafafa;
+}
+
+.business-info-container .link{
+    color: #29abe2;
+}
+
+.business-info-container .showOrHideButton{
+    color: #fa0;
+    cursor:pointer;
+    font-size: 16px;
+    margin-left: 5px;
+}
+
+.business-info-container .tdtitle{
+      min-width: 180px;
+      text-align: left;
+}
+
+.business-info-container .tdstairs{
+      min-width: 200px;
+      height: 50px
+}
+
+.business-info-container .noServer{
+    font-size: 11px;
+    color: black;
+}
+
+.business-info-container .percent{
+    color: #29abe2;
+}
+
+.business-info-container .changeCata{
+    border-left-width: 15px;
+    padding-left: 15px;
+    margin-top: 12px;
+    margin-bottom: 5px;
+    background-color: #e8e8e8;
+}
+         
+.business-info-container .ant-radio-button-wrapper-checked{
+    border-left: 1px #eeeeee solid;
+    border-top: 1px #eeeeee solid;
+    border-right: 1px #eeeeee solid;
+    border-bottom: 3px #A3E0FF solid;
+    background: white;
+    color: black;
+    box-shadow: -1px 0 0 0 #eeeeee; 
+}
