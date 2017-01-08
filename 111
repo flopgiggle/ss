@@ -1,312 +1,403 @@
 import React, { PropTypes } from 'react';
 import { connect } from 'react-redux';
-import CommonUtil from '../../../../assets/js/common.js';
+import { getBusinessInfo } from '../../actions/business'
 import { Row, Col, Modal, Input, Button, Select, Cascader, Table, AutoComplete, Radio, DatePicker, InputNumber, Checkbox } from 'antd';
-import HistorySearchInput from '../search';
+
 import './style.css';
+import CommonUtil from '../../../../assets/js/common.js';
+
+import CIAChart from '../chart/scatter';
+
 const RadioGroup = Radio.Group;
 const RadioButton = Radio.Button;
-class BusinessInfo extends React.Component {
+class TestTable extends React.Component {
   constructor(props) {
     super(props);
-    		this.state = {
-			value: 1,
-			indeterminate: true,
-			checkAll: false,
-			tableData:{},
-			isSelectAll:false,
-		};
+    this.state = {
+      selectedCategory: '数统企业网',
+      indeterminate: true,
+      checkAll: false,
+      tableData: {},
+      isSelectAll: false,
+      seletedProductSeries:[]
+    };
+    this.allSelectedCatgorysMap=new Map();
+    const standardData = this.getStandardData();
+    this.state.tableData = standardData;
+  }
+
+  getTableData() {
+    const dataObj = [
+      {
+        SPQName: '301总医院项目',
+        SPQID: '123',
+        FrameNumber: '567',
+        ProjectDate: '2015/12/12~2016/11/11',
+        TotalAmount: 1234.32,
+        PassCondition: 'XXXXX',
+        ProductCategory: '数统企业网',
+        ProductSeries: 'AR SMB1',
+        ProductSeriesAmount: '323.32',
+        Discount: 32
+      },
+      {
+        SPQName: '301总医院项目',
+        SPQID: '123',
+        FrameNumber: '567',
+        ProjectDate: '2015/12/12~2016/11/11',
+        TotalAmount: 1234.32,
+        PassCondition: 'XXXXX',
+        ProductCategory: '数统企业网',
+        ProductSeries: 'AR SMB2',
+        ProductSeriesAmount: '323.32',
+        Discount: 32
+      },
+      {
+        SPQName: '301总医院项目',
+        SPQID: '123',
+        FrameNumber: '567',
+        ProjectDate: '2015/12/12~2016/11/11',
+        TotalAmount: 1234.32,
+        PassCondition: 'XXXXX',
+        ProductCategory: '服务器',
+        ProductSeries: 'AR SMB3',
+        ProductSeriesAmount: '323.32',
+        Discount: 32
+      }
+      ,
+      {
+        SPQName: '21世纪经济',
+        SPQID: '123q',
+        FrameNumber: '567',
+        ProjectDate: '2015/12/12~2016/11/11',
+        TotalAmount: 1234.32,
+        PassCondition: 'XXXXX',
+        ProductCategory: '服务器',
+        ProductSeries: 'AR SMB1',
+        ProductSeriesAmount: '323.32',
+        Discount: 32
+      }
+      ,
+      {
+        SPQName: '21世纪经济',
+        SPQID: '123q',
+        FrameNumber: '567',
+        ProjectDate: '2015/12/12~2016/11/11',
+        TotalAmount: 1234.32,
+        PassCondition: 'XXXXX',
+        ProductCategory: '路由器',
+        ProductSeries: 'AR SMB2',
+        ProductSeriesAmount: '323.32',
+        Discount: 32
+      },
+      {
+        SPQName: '21世纪经济',
+        SPQID: '123q',
+        FrameNumber: '567',
+        ProjectDate: '2015/12/12~2016/11/11',
+        TotalAmount: 1234.32,
+        PassCondition: 'XXXXX',
+        ProductCategory: '路由器',
+        ProductSeries: 'AR SMB3',
+        ProductSeriesAmount: '323.32',
+        Discount: 32
+      },
+      {
+        SPQName: '21世纪经济',
+        SPQID: '123q',
+        FrameNumber: '567',
+        ProjectDate: '2015/12/12~2016/11/11',
+        TotalAmount: 1234.32,
+        PassCondition: 'XXXXX',
+        ProductCategory: '路由器',
+        ProductSeries: 'AR SMB3',
+        ProductSeriesAmount: '323.32',
+        Discount: 32
+      }
+    ]
+
+    return dataObj;
+  }
+
+  getGroupDataFromRows(groupFlag, rows) {
+    const groupMap = new Map();
+    for (const item of rows) {
+      if (groupMap.has(item[groupFlag])) {
+        const groupsData = groupMap.get(item[groupFlag]);
+        groupsData.push(item);
+      } else {
+        const groupsData = [];
+        groupsData.push(item);
+        groupMap.set(item[groupFlag], groupsData);
+      }
+    }
+    return groupMap;
+  }
+
+
+  getProductRowsInfoFromData(productCategoryGroupMap) {
+    const rows = [];
+    for (const [key, value] of productCategoryGroupMap) {
+      const oneRow = {
+        ProductCategory: key,
+        ProductSeries: value
+      }
+      rows.push(oneRow);
+    }
+    return rows;
+  }
+
+  getStandardData() {
+    const tableData = this.getTableData();
+    const projectGroupData = this.getGroupDataFromRows('SPQID', tableData);
+    const standardData = [];
+    for (const [key, value] of projectGroupData) {
+      const oneProject = {
+        SPQID: key,
+        ProductCategory: []
+      }
+      const productCategoryGroupMap = this.getGroupDataFromRows('ProductCategory', value);
+      oneProject.ProductCategory = this.getProductRowsInfoFromData(productCategoryGroupMap);
+      standardData.push(oneProject);
+    }
+    return standardData;
+  }
+
+
+
+  generateTableRows() {
+
+    const rows = [];
+    const _this = this;
+    this.state.tableData.map(function (projectItem) {
+      let projectIndex = 0;
+      let projectRowSpan = 0;
+      let isCreateProjectTd;
+      if (projectIndex === 0) {
+        projectItem.ProductCategory.map((items) => {
+          projectRowSpan += items.ProductSeries.length;
+          isCreateProjectTd = true;
+        });
+
+      } else {
+        projectRowSpan = 0;
+        isCreateProjectTd = false;
+      }
+
+      projectItem.ProductCategory.map((categoryItems) => {
+        let categoryIndex = 0;
+        let categoryRowSpan = categoryItems.ProductSeries.length;
+        let isCreateCategoryTd;
+        if (categoryIndex === 0) {
+          categoryRowSpan = categoryItems.ProductSeries.length;
+          isCreateCategoryTd = true;
+        } else {
+          categoryRowSpan = 0;
+          isCreateCategoryTd = false;
+        }
+
+        categoryItems.ProductSeries.map((seriesItems) => {
+          const tr = <tr>
+            {isCreateProjectTd ? <td rowSpan={projectRowSpan}>
+              <Checkbox checked={_this.getCheckedStatusBySPQID(seriesItems.SPQID)} onChange={_this.onCheckProjectChange.bind(_this, seriesItems.SPQID)}></Checkbox></td> : ''}
+            {isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.SPQName}</td> : ''}
+            {isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.SPQID}</td> : ''}
+            {isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.ProjectDate}</td> : ''}
+            {isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.TotalAmount}</td> : ''}
+            {isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.PassCondition}</td> : ''}
+            {isCreateCategoryTd ? <td rowSpan={categoryRowSpan}>{seriesItems.ProductCategory}</td> : ''}
+            {isCreateCategoryTd ? <td rowSpan={categoryRowSpan}>{123.33}</td> : ''}
+            <td >{seriesItems.ProductSeries}</td>
+            <td >{seriesItems.ProductSeriesAmount}</td>
+            <td >{seriesItems.Discount}</td>
+          </tr>;
+
+          rows.push(tr);
+          isCreateProjectTd = false;
+          isCreateCategoryTd = false;
+          projectIndex++;
+          categoryIndex++;
+        });
+      })
+    })
+    return rows;
+  }
+
+  getCheckedStatusBySPQID(SPQID){
+    let checkedStatus = false;
+    this.state.tableData.map(item => {
+      if (item.SPQID === SPQID) {
+         if(item.selected){
+           checkedStatus = true;
+         }
+      }
+    }); 
+    return checkedStatus; 
+  }
+
+  onCheckAllChange(e) {
+    this.state.tableData.map(item => {
+      item.selected = !this.state.isSelectAll;
+    });
+    this.allSelectedCatgorysMap = this.getAllSelectedCategorys();
+    let selectedCategory = "";
+    for(const [key,value] of this.allSelectedCatgorysMap){
+      selectedCategory =  key;
+      break;
+    }
+
+    this.setState({
+      isSelectAll: !this.state.isSelectAll,
+      selectedCategory
+    });
 
   }
-  
-	getTableData() {
-		const dataObj = [
-			{
-				SPQName:'301总医院项目',
-				SPQID:'123',
-				FrameNumber:'567',
-				ProjectDate:'2015/12/12~2016/11/11',
-				TotalAmount:1234.32,
-				PassCondition:'XXXXX',
-				ProductCategory:'数统企业网',
-				ProductSeries:'AR SMB1',
-				ProductSeriesAmount:'323.32',
-				Discount:32
-			},
-			{
-				SPQName:'301总医院项目',
-				SPQID:'123',
-				FrameNumber:'567',
-				ProjectDate:'2015/12/12~2016/11/11',
-				TotalAmount:1234.32,
-				PassCondition:'XXXXX',
-				ProductCategory:'数统企业网',
-				ProductSeries:'AR SMB2',
-				ProductSeriesAmount:'323.32',
-				Discount:32
-			},
-			{
-				SPQName:'301总医院项目',
-				SPQID:'123',
-				FrameNumber:'567',
-				ProjectDate:'2015/12/12~2016/11/11',
-				TotalAmount:1234.32,
-				PassCondition:'XXXXX',
-				ProductCategory:'服务器',
-				ProductSeries:'AR SMB3',
-				ProductSeriesAmount:'323.32',
-				Discount:32
-			}
-			 ,
-			 {
-			 	SPQName:'21世纪经济',
-			 	SPQID:'123q',
-			 	FrameNumber:'567',
-			 	ProjectDate:'2015/12/12~2016/11/11',
-			 	TotalAmount:1234.32,
-			 	PassCondition:'XXXXX',
-			 	ProductCategory:'服务器',
-			 	ProductSeries:'AR SMB1',
-			 	ProductSeriesAmount:'323.32',
-			 	Discount:32
-			 }
-			 ,
-			 {
-			 	SPQName:'21世纪经济',
-			 	SPQID:'123q',
-			 	FrameNumber:'567',
-			 	ProjectDate:'2015/12/12~2016/11/11',
-			 	TotalAmount:1234.32,
-			 	PassCondition:'XXXXX',
-			 	ProductCategory:'路由器',
-			 	ProductSeries:'AR SMB2',
-			 	ProductSeriesAmount:'323.32',
-			 	Discount:32
-			 },
-			 {
-			 	SPQName:'21世纪经济',
-			 	SPQID:'123q',
-			 	FrameNumber:'567',
-			 	ProjectDate:'2015/12/12~2016/11/11',
-			 	TotalAmount:1234.32,
-			 	PassCondition:'XXXXX',
-			 	ProductCategory:'路由器',
-			 	ProductSeries:'AR SMB3',
-			 	ProductSeriesAmount:'323.32',
-			 	Discount:32
-			 },
-			 {
-			 	SPQName:'21世纪经济',
-			 	SPQID:'123q',
-			 	FrameNumber:'567',
-			 	ProjectDate:'2015/12/12~2016/11/11',
-			 	TotalAmount:1234.32,
-			 	PassCondition:'XXXXX',
-			 	ProductCategory:'路由器',
-			 	ProductSeries:'AR SMB3',
-			 	ProductSeriesAmount:'323.32',
-			 	Discount:32
-			 }
-		]
 
-		return dataObj;
-	}
+  onCheckProjectChange(SPQID,e) {
+    const isChecked = e.target.checked;
+    for(const item of this.state.tableData){
+      if (item.SPQID === SPQID ) {
+        item.selected = isChecked;
+      }       
+    }
+    this.allSelectedCatgorysMap = this.getAllSelectedCategorys();
+    let selectedCategory = "";
+    for(const [key,value] of this.allSelectedCatgorysMap){
+      selectedCategory =  key;
+      break;
+    }
+    this.setState({
+      isSelectAll: this.isAllSelected(),
+      selectedCategory
+    });
+  }
 
-	getGroupDataFromRows(groupFlag, rows) {
-		const groupMap = new Map();
-		for (const item of rows) {
-			if (groupMap.has(item[groupFlag])) {
-				const groupsData = groupMap.get(item[groupFlag]);
-				groupsData.push(item);
-			} else {
-				const groupsData = [];
-				groupsData.push(item);
-				groupMap.set(item[groupFlag], groupsData);
-			}
-		}
-		return groupMap;
-	}
+  isAllSelected(){
+    let isAllSelected = true;
+    this.state.tableData.map(item => {
+      if (!!!item.selected) {
+         isAllSelected = false;
+      }
+    });
+    return isAllSelected;
+  }
 
-
-	getProductRowsInfoFromData(productCategoryGroupMap) {
-		const rows = [];
-		for (const [key, value] of productCategoryGroupMap) {
-			const oneRow = {
-				ProductCategory: key,
-				ProductSeries: value
-			}
-			rows.push(oneRow);
-		}
-		return rows;
-	}
-
-	getStandardData() {
-		const tableData = this.getTableData();
-		const projectGroupData = this.getGroupDataFromRows('SPQID', tableData);
-		const standardData = [];
-		for (const [key, value] of projectGroupData) {
-			const oneProject = {
-				SPQID: key,
-				ProductCategory: []
-			}
-			const productCategoryGroupMap = this.getGroupDataFromRows('ProductCategory', value);
-			oneProject.ProductCategory = this.getProductRowsInfoFromData(productCategoryGroupMap);
-			standardData.push(oneProject);
-		}
-		return standardData;
-	}
-
-	onCheckProjectChange(SPQID) {
-		debugger;
-		let isAllSelected = true;
-		this.state.tableData.map(item=>{
-			if(item.SPQID === SPQID){
-				item.selected = true;
-			}
-			if(item.selected === false){
-				isAllSelected = false;
-			}
-		});
-
-		this.setState({
-			isSelectAll:isAllSelected 
-		});
-	}
-
-	generateTableRows() {
-		debugger;
-		const standardData = this.getStandardData();
-		this.state.tableData = standardData;
-		const rows = [];
-		const _this = this;
-		standardData.map(function (projectItem) {
-			let projectIndex = 0;
-			let projectRowSpan = 0;
-			let isCreateProjectTd;
-			if (projectIndex === 0) {
-				projectItem.ProductCategory.map((items) => {
-					projectRowSpan += items.ProductSeries.length;
-					isCreateProjectTd = true;
-				});
-				
-			} else {
-				projectRowSpan = 0;
-				isCreateProjectTd = false;
-			}
-			
-			projectItem.ProductCategory.map((categoryItems) => {
-				let categoryIndex = 0;
-				let categoryRowSpan = categoryItems.ProductSeries.length;
-				let isCreateCategoryTd;
-				if (categoryIndex === 0) {
-					categoryRowSpan = categoryItems.ProductSeries.length;
-					isCreateCategoryTd = true;
-				} else {
-					categoryRowSpan = 0;
-					isCreateCategoryTd = false;
-				}
-				
-				categoryItems.ProductSeries.map((seriesItems) => {
-					const tr = <tr>
-						{isCreateProjectTd ? <td rowSpan={projectRowSpan}>
-						<Checkbox onChange={_this.onCheckProjectChange.bind(_this,seriesItems.SPQID)}></Checkbox></td> : ''}
-						{isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.SPQName}</td> : ''}
-						{isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.SPQID}</td> : ''}
-						{isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.ProjectDate}</td> : ''}
-						{isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.TotalAmount}</td> : ''}
-						{isCreateProjectTd ? <td rowSpan={projectRowSpan}>{seriesItems.PassCondition}</td> : ''}
-						{isCreateCategoryTd ? <td rowSpan={categoryRowSpan}>{seriesItems.ProductCategory}</td> : ''}
-						{isCreateCategoryTd ? <td rowSpan={categoryRowSpan}>{123.33}</td> : ''}
-						<td >{seriesItems.ProductSeries}</td>
-						<td >{seriesItems.ProductSeriesAmount}</td>
-						<td >{seriesItems.Discount}</td>
-					</tr>;
-
-					rows.push(tr);
-					isCreateProjectTd = false;
-					isCreateCategoryTd = false;
-					projectIndex++;
-					categoryIndex++;
-				});
-			})
-		})
-		return rows;
-	}
-
-	onCheckAllChange(e) {
-		this.state.tableData.map(item=>{
-			item.selected = !this.state.isSelectAll;
-		});
-		this.setState({
-			isSelectAll:!this.state.isSelectAll 	
-		});
-	}
-
-	onCategoryChange(e) {
-		console.log('radio checked', e.target.value);
-		this.setState({
-			value: e.target.value,
-		});
-	}
+  onCategoryChange(e) {
+    console.log('radio checked', e.target.value);
+    const seletedProductSeries = this.allSelectedCatgorysMap.get(e.target.value);
+    this.setState({
+      selectedCategory: e.target.value,
+      seletedProductSeries
+    });
+    
+  }
 
   onSeriesChange(e) {
-		console.log(`radio checked:${e.target.value}`);
-	}
+    console.log(`radio checked:${e.target.value}`);
+  }
+
+  getAllSelectedCategorys(){
+    const groupMap = new Map();
+    //归集所有选中项目中的产品大类，如果产品大类中子系列相同需要合并子系列
+    this.state.tableData.map(item => {
+       if (item.selected) {
+          item.ProductCategory.map(categoryItem=>{
+            if (groupMap.has(categoryItem.ProductCategory)) {
+              const groupsData = groupMap.get(categoryItem.ProductCategory);
+              groupsData.push(...categoryItem.ProductSeries);
+            } else {
+              const groupsData = [];
+              groupsData.push(...categoryItem.ProductSeries);
+              groupMap.set(categoryItem.ProductCategory, groupsData);
+            }          
+          });
+       }
+    });
+
+    return groupMap;
+  }
+
+  generateCategoryGroupRadio(){
+   
+    const radios = [];
+    for(const [key, value] of this.allSelectedCatgorysMap){
+      debugger;
+      radios.push(<Radio value={key}>{key}</Radio>);  
+    }
+    if(radios.length === 0){
+      this.state.seletedProductSeries = [];
+    }
+    return radios;
+  }
+
+  generateSeletedProductSeries(){
+    const buttons = [];
+    debugger;
+    
+    this.state.seletedProductSeries = this.allSelectedCatgorysMap.get(this.state.selectedCategory);
+    if(this.state.seletedProductSeries){
+      this.state.seletedProductSeries.map(items=>{
+          buttons.push(<RadioButton value={items.ProductSeries}>{items.ProductSeries}</RadioButton>);    
+        });
+    }
+    
+    return buttons;
+  }
+
 
   render() {
+
     return (
-      			<div className='business-info-container'>
-				<div className='table-content'>
-					<table>
-						<thead>
-							<th><Checkbox  onChange={this.onCheckAllChange.bind(this)} checked={this.state.isSelectAll} ></Checkbox></th>
-							<th>特价/项目名称</th>
-							<th>特价编号</th>
-							<th>项目时间</th>
-							<th>总金额</th>
-							<th>特价条件通过</th>
-							<th>产品大类</th>
-							<th>产品大类金额</th>
-							<th>产品系列</th>
-							<th>产品系列金额</th>
-							<th>产品折扣</th>
-						</thead>
-						{this.generateTableRows()}
-					</table>
-				</div>
-				<div>
+      <div className='business-info-container'>
+        <div className='table-content'>
+          <table className='history-table'>
+            <thead>
+              <th><Checkbox onChange={this.onCheckAllChange.bind(this)} checked={this.state.isSelectAll} ></Checkbox></th>
+              <th>特价/项目名称</th>
+              <th>特价编号</th>
+              <th>项目时间</th>
+              <th>总金额</th>
+              <th>特价条件通过</th>
+              <th>产品大类</th>
+              <th>产品大类金额</th>
+              <th>产品系列</th>
+              <th>产品系列金额</th>
+              <th>产品折扣</th>
+            </thead>
+            {this.generateTableRows()}
+          </table>
+        </div>
+        <div>
 
-					<div className='changeCata'>
-						<RadioGroup onChange={this.onCategoryChange.bind(this)} value={this.state.value}>
-							<Radio value={1}>数通企业网</Radio>
-							<Radio value={2}>服务器</Radio>
-						</RadioGroup>
-					</div>
+          <div className='changeCata'>
+            <RadioGroup onChange={this.onCategoryChange.bind(this)} value={this.state.selectedCategory}>
+              {this.generateCategoryGroupRadio()}
+            </RadioGroup>
+          </div>
 
-					<div>
-						<RadioGroup onChange={this.onSeriesChange.bind(this)} defaultValue="a">
-							<RadioButton value="a">ARSMS</RadioButton>
-							<RadioButton value="b">S1700</RadioButton>
-							<RadioButton value="c">BKK848</RadioButton>
-							<RadioButton value="d">CKN123</RadioButton>
-						</RadioGroup>
-					</div>
+          <div>
+            <RadioGroup onChange={this.onSeriesChange.bind(this)} defaultValue="a">
+              {this.generateSeletedProductSeries()}
+            </RadioGroup>
+          </div>
 
-				</div>
-			</div>
+        </div>
+        <CIAChart />
+      </div>
+
+
     );
   }
 }
 
 const mapStateToProps = (state) => {
-  return { };
-};
+  return {
+    businessData: state.businessReducer.data//,
+    //BusinessId: state.commonReducer.ProjectData.BusinessId
+  }
+}
 
-const mapDispatchToProps = (dispatch, ownProps) => {
-	return {}
-};
-
-export default connect(mapStateToProps,mapDispatchToProps)(BusinessInfo);
+export default connect(mapStateToProps)(TestTable)
 
 .business-info-container td {
     text-align: center;
@@ -391,8 +482,12 @@ export default connect(mapStateToProps,mapDispatchToProps)(BusinessInfo);
     justify-content: center;    
 }
 
-.business-info-container .commercialTable{
+.business-info-container .history-table{
     min-width: 1300px;
+}
+
+.business-info-container .table-content{
+    overflow-x: auto;
 }
 
 .business-info-container {
